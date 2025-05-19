@@ -57,7 +57,7 @@ int main() {
         TreasuryQuote(100.0000, (4.6250 + 4.7500) / 2.0, Period(15, Years)),    //synthetic
         TreasuryQuote(099.3281, 4.7500, Period(20, Years)),
         TreasuryQuote(100.0000, (4.75 + 4.625) / 2.0, Period(25, Years)),       //synthetic
-        TreasuryQuote(097.7500, 5.6250, Period(30, Years)) };                   // base quote is 4.625% par (this is 30y up)
+        TreasuryQuote(097.7500, 4.6250, Period(30, Years)) };                   // base quote is 4.625% par
 
     
     std::vector<std::shared_ptr<RateHelper>> rate_helpers;
@@ -194,10 +194,10 @@ int main() {
     curve_out.close();
 
     LiabilityCashFlows liability_cash_flows("liability_cash_flows.csv");
-    std::ofstream liab_out("liabilities_30y_up_100bps.csv");
+    std::ofstream liab_out("liabilities_base_curves.csv");
     liab_out << "CurveName,NPV,Duration,Convexity\n";
 
-    std::ofstream bond_out("assets_30y_up_100bps.csv");
+    std::ofstream bond_out("assets_base_curves.csv");
     bond_out << "CurveName,Tenor,NPV,Duration,Convexity\n";
 
     std::vector<Period> tenors = { Period(5, Years), Period(10, Years), Period(20, Years), Period(30, Years) };

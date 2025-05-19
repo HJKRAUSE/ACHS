@@ -9,8 +9,8 @@ namespace ACHS {
 	using namespace QuantLib;
 
 	template<typename Trait>
-	class DualBlended : public ExtensionMethod<Flat<Trait>, Trait> {
-		friend class ExtensionMethod<Flat<Trait>, Trait>;
+	class DualBlended : public ExtensionMethod<DualBlended<Trait>, Trait> {
+		friend class ExtensionMethod<DualBlended<Trait>, Trait>;
 	public:
 		DualBlended(
 			const Period& start_period,
@@ -19,7 +19,7 @@ namespace ACHS {
 			const Period& d1 = Period(20, Years),
 			const Period& d2 = Period(30, Years)) :
 			d1_(d1), d2_(d2),
-			ExtensionMethod<Flat<Trait>, Trait>(start_period, end_period, step) {}
+			ExtensionMethod<DualBlended<Trait>, Trait>(start_period, end_period, step) {}
 
 	protected:
 		std::shared_ptr<YieldTermStructure> buildCurveImpl(
