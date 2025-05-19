@@ -2,16 +2,26 @@
 #include <map>
 #include <fstream>
 #include <iomanip>
+#include <chrono>
+
+// Helper to construct curves more easily
 #include "TreasuryQuote.h"
-#include "ExtendedCurve.h"
+
+// Extension logic
 #include "ExtensionMethod.h"
+#include "ExtendedCurve.h"
 #include "ExtendedCurves.h"
+
+// Extension methods
 #include "Constant.h"
 #include "Flat.h"
 #include "LinearlyGraded.h"
 #include "RollingAverage.h"
+#include "DualBlended.h"
+
+// LCF generation
 #include "LiabilityCashFlows.h"
-#include <chrono>
+
 
 using namespace QuantLib;
 using namespace ACHS;
@@ -25,9 +35,8 @@ std::shared_ptr<Bond> makeBond(const Date& today, const Period& tenor, Rate coup
         1, 100.0, schedule, std::vector<Rate>{coupon}, ActualActual(ActualActual::Bond));
 }
 
-
 int main() {
-    std::cout << "ACHS Surplus Volatility\nHarold James Krause\n04-16-2025\n\n";
+    std::cout << "ACHS Surplus Volatility\nHarold James Krause\n05-19-2025\n\n";
 
     Date today(31, Dec, 2024);
 
@@ -45,10 +54,10 @@ int main() {
         TreasuryQuote(100.1953, 4.0000, Period(5, Years)),
         TreasuryQuote(100.0078, 4.1250, Period(7, Years)),
         TreasuryQuote(102.4688, 4.6250, Period(10, Years)),
-        TreasuryQuote(100.0000, 4.6500, Period(15, Years)), //synthetic
+        TreasuryQuote(100.0000, (4.6250 + 4.7500) / 2.0, Period(15, Years)),    //synthetic
         TreasuryQuote(099.3281, 4.7500, Period(20, Years)),
-        TreasuryQuote(100.0000, 4.7000, Period(25, Years)), //synthetic
-        TreasuryQuote(097.7500, 4.6250, Period(30, Years)) };
+        TreasuryQuote(100.0000, (4.75 + 4.625) / 2.0, Period(25, Years)),       //synthetic
+        TreasuryQuote(097.7500, 3.6250, Period(30, Years)) };                   // base quote is 4.625% par
 
     
     std::vector<std::shared_ptr<RateHelper>> rate_helpers;
@@ -71,18 +80,20 @@ int main() {
     };
 
 
-    ExtendedCurves yield_curves;
+    ExtendedCurves yield_curves(0.001);
     for (const std::pair<std::string, std::shared_ptr<YieldTermStructure>>& base : base_yield_curves) {
         // Forward-rate extensions
         yield_curves.addOrUpdate(base.first + ":FLAT_FORWARD", base.second, Flat<Traits::Forward>(Period(30, Years), Period(100, Years)));
         yield_curves.addOrUpdate(base.first + ":CONSTANT_FORWARD", base.second, Constant<Traits::Forward>(Rate(0.05), Period(30, Years), Period(100, Years)));
         yield_curves.addOrUpdate(base.first + ":LINEARLY_GRADED_FORWARD", base.second, LinearlyGraded<Traits::Forward>(Rate(0.05), Period(30, Years), Period(40, Years), Period(100, Years)));
         yield_curves.addOrUpdate(base.first + ":ROLLING_AVERAGE_FORWARD", base.second, RollingAverage<Traits::Forward>(60, Period(30, Years), Period(100, Years)));
+        yield_curves.addOrUpdate(base.first + ":DUAL_BLENDED_FORWARD", base.second, DualBlended<Traits::Forward>(Period(30, Years), Period(100, Years)));
         // Zero-rate extensions
         yield_curves.addOrUpdate(base.first + ":FLAT_ZERO", base.second, Flat<Traits::Zero>(Period(30, Years), Period(100, Years)));
         yield_curves.addOrUpdate(base.first + ":CONSTANT_ZERO", base.second, Constant<Traits::Zero>(Rate(0.05), Period(30, Years), Period(100, Years)));
         yield_curves.addOrUpdate(base.first + ":LINEARLY_GRADED_ZERO", base.second, LinearlyGraded<Traits::Zero>(Rate(0.05), Period(30, Years), Period(40, Years), Period(100, Years)));
         yield_curves.addOrUpdate(base.first + ":ROLLING_AVERAGE_ZERO", base.second, RollingAverage<Traits::Zero>(60, Period(30, Years), Period(100, Years)));
+        yield_curves.addOrUpdate(base.first + ":DUAL_BLENDED_ZERO", base.second, DualBlended<Traits::Forward>(Period(30, Years), Period(100, Years)));
     }
     
 
@@ -91,50 +102,73 @@ int main() {
         "PIECEWISE_ZERO_LINEAR:CONSTANT_FORWARD",
         "PIECEWISE_ZERO_LINEAR:LINEARLY_GRADED_FORWARD",
         "PIECEWISE_ZERO_LINEAR:ROLLING_AVERAGE_FORWARD",
+        "PIECEWISE_ZERO_LINEAR:DUAL_BLENDED_FORWARD",
+
         "PIECEWISE_ZERO_LINEAR:FLAT_ZERO",
         "PIECEWISE_ZERO_LINEAR:CONSTANT_ZERO",
         "PIECEWISE_ZERO_LINEAR:LINEARLY_GRADED_ZERO",
         "PIECEWISE_ZERO_LINEAR:ROLLING_AVERAGE_ZERO",
+        "PIECEWISE_ZERO_LINEAR:DUAL_BLENDED_ZERO",
+
         "PIECEWISE_DISCOUNT_LOGLINEAR:FLAT_FORWARD",
         "PIECEWISE_DISCOUNT_LOGLINEAR:CONSTANT_FORWARD",
         "PIECEWISE_DISCOUNT_LOGLINEAR:LINEARLY_GRADED_FORWARD",
         "PIECEWISE_DISCOUNT_LOGLINEAR:ROLLING_AVERAGE_FORWARD",
+        "PIECEWISE_DISCOUNT_LOGLINEAR:DUAL_BLENDED_FORWARD",
+
         "PIECEWISE_DISCOUNT_LOGLINEAR:FLAT_ZERO",
         "PIECEWISE_DISCOUNT_LOGLINEAR:CONSTANT_ZERO",
         "PIECEWISE_DISCOUNT_LOGLINEAR:LINEARLY_GRADED_ZERO",
         "PIECEWISE_DISCOUNT_LOGLINEAR:ROLLING_AVERAGE_ZERO",
+        "PIECEWISE_DISCOUNT_LOGLINEAR:DUAL_BLENDED_ZERO",
+
         "PIECEWISE_ZERO_CUBIC:FLAT_FORWARD",
         "PIECEWISE_ZERO_CUBIC:CONSTANT_FORWARD",
         "PIECEWISE_ZERO_CUBIC:LINEARLY_GRADED_FORWARD",
         "PIECEWISE_ZERO_CUBIC:ROLLING_AVERAGE_FORWARD",
+        "PIECEWISE_ZERO_CUBIC:DUAL_BLENDED_FORWARD",
+
         "PIECEWISE_ZERO_CUBIC:FLAT_ZERO",
         "PIECEWISE_ZERO_CUBIC:CONSTANT_ZERO",
         "PIECEWISE_ZERO_CUBIC:LINEARLY_GRADED_ZERO",
         "PIECEWISE_ZERO_CUBIC:ROLLING_AVERAGE_ZERO",
+        "PIECEWISE_ZERO_CUBIC:DUAL_BLENDED_ZERO",
+
         "FITTED_NELSON_SIEGEL:FLAT_FORWARD",
         "FITTED_NELSON_SIEGEL:CONSTANT_FORWARD",
         "FITTED_NELSON_SIEGEL:LINEARLY_GRADED_FORWARD",
         "FITTED_NELSON_SIEGEL:ROLLING_AVERAGE_FORWARD",
+        "FITTED_NELSON_SIEGEL:DUAL_BLENDED_FORWARD",
+
         "FITTED_NELSON_SIEGEL:FLAT_ZERO",
         "FITTED_NELSON_SIEGEL:CONSTANT_ZERO",
         "FITTED_NELSON_SIEGEL:LINEARLY_GRADED_ZERO",
         "FITTED_NELSON_SIEGEL:ROLLING_AVERAGE_ZERO",
+        "FITTED_NELSON_SIEGEL:DUAL_BLENDED_ZERO",
+
         "FITTED_NELSON_SIEGEL_SVENSSON:FLAT_FORWARD",
         "FITTED_NELSON_SIEGEL_SVENSSON:CONSTANT_FORWARD",
         "FITTED_NELSON_SIEGEL_SVENSSON:LINEARLY_GRADED_FORWARD",
         "FITTED_NELSON_SIEGEL_SVENSSON:ROLLING_AVERAGE_FORWARD",
+        "FITTED_NELSON_SIEGEL_SVENSSON:DUAL_BLENDED_FORWARD",
+
         "FITTED_NELSON_SIEGEL_SVENSSON:FLAT_ZERO",
         "FITTED_NELSON_SIEGEL_SVENSSON:CONSTANT_ZERO",
         "FITTED_NELSON_SIEGEL_SVENSSON:LINEARLY_GRADED_ZERO",
         "FITTED_NELSON_SIEGEL_SVENSSON:ROLLING_AVERAGE_ZERO",
+        "FITTED_NELSON_SIEGEL_SVENSSON:DUAL_BLENDED_ZERO",
+
         "FITTED_EXPONENTIAL_SPLINES:FLAT_FORWARD",
         "FITTED_EXPONENTIAL_SPLINES:CONSTANT_FORWARD",
         "FITTED_EXPONENTIAL_SPLINES:LINEARLY_GRADED_FORWARD",
         "FITTED_EXPONENTIAL_SPLINES:ROLLING_AVERAGE_FORWARD",
+        "FITTED_EXPONENTIAL_SPLINES:DUAL_BLENDED_FORWARD",
+
         "FITTED_EXPONENTIAL_SPLINES:FLAT_ZERO",
         "FITTED_EXPONENTIAL_SPLINES:CONSTANT_ZERO",
         "FITTED_EXPONENTIAL_SPLINES:LINEARLY_GRADED_ZERO",
-        "FITTED_EXPONENTIAL_SPLINES:ROLLING_AVERAGE_ZERO"
+        "FITTED_EXPONENTIAL_SPLINES:ROLLING_AVERAGE_ZERO",
+        "FITTED_EXPONENTIAL_SPLINES:DUAL_BLENDED_ZERO"
     };
 
     std::ofstream curve_out("yield_curves.csv");
@@ -160,10 +194,10 @@ int main() {
     curve_out.close();
 
     LiabilityCashFlows liability_cash_flows("liability_cash_flows.csv");
-    std::ofstream liab_out("liab_pricing.csv");
+    std::ofstream liab_out("liabilities_30y_down_100bps.csv");
     liab_out << "CurveName,NPV,Duration,Convexity\n";
 
-    std::ofstream bond_out("bond_pricing.csv");
+    std::ofstream bond_out("assets_30y_down_100bps.csv");
     bond_out << "CurveName,Tenor,NPV,Duration,Convexity\n";
 
     std::vector<Period> tenors = { Period(5, Years), Period(10, Years), Period(20, Years), Period(30, Years) };
@@ -186,7 +220,6 @@ int main() {
     }
     bond_out.close();
     liab_out.close();
-
 
     return 0;
 }

@@ -58,5 +58,8 @@
     <ClInclude Include="LiabilityCashFlows.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DualBlended.h">
+      <Filter>Header Files\Extension Methods</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

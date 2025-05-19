@@ -146,6 +146,7 @@
     <ClInclude Include="LinearlyGraded.h" />
     <ClInclude Include="RollingAverage.h" />
     <ClInclude Include="TreasuryQuote.h" />
+    <ClInclude Include="DualBlended.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
